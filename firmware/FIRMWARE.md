@@ -24,8 +24,7 @@
 - Used for LED-only smoke testing. Fully superseded by current unified firmware.
 
 ### WiFi
-- **Primary:** `CMHK-ECch` / `gt5cqu69` (2.4GHz, working)
-- **Phone hotspot:** `Redmi 15 5G` / `alpha102938A!` (ESP32 couldn't connect — likely 5GHz/WiFi 6)
+- **WiFi:** Credentials in `wifi.env` (not committed). ESP32 supports 2.4GHz only.
 
 ---
 
@@ -219,7 +218,7 @@ DO broadcasts `{type:"wifi_list","networks":[{ssid,rssi,enc},...]}`. Verify netw
 
 ### S10: WiFi set (WSS)
 ```json
-{"command":"wifi_set","params":{"ssid":"CMHK-ECch","pass":"gt5cqu69"}}
+{"command":"wifi_set","params":{"ssid":"MyWiFi","pass":"my-password"}}
 ```
 ESP32 saves to EEPROM, disconnects, reconnects to new network. DO broadcasts `{type:"wifi_ack","status":"ok"}` on success. Telemetry resumes within 15 seconds.
 
