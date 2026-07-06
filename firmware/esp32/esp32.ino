@@ -17,14 +17,16 @@
 #include <Adafruit_SSD1306.h>
 
 // ── CONFIG ──────────────────────────────────────
-const char* WIFI_SSID     = "YOUR_SSID";
-const char* WIFI_PASS     = "YOUR_PASSWORD";
+const char* WIFI_SSID     = "Redmi 15 5G";
+const char* WIFI_PASS     = "alpha102938A!";
 
 const char* WS_HOST       = "iot-hub.funconnect.workers.dev";
 const uint16_t WS_PORT    = 443;
 const char* WS_PATH       = "/device/esp32-sensor";
 
 #define LED_PIN             2
+#define RELAY1_PIN           26    // IN1 (yellow) — active LOW: LOW=ON
+#define RELAY2_PIN           27    // IN2 (orange) — active LOW: LOW=ON
 #define ONEWIRE_PIN         13
 #define TDS_PIN             35    // ADC1 — GPIO 35, blue LED lit
 #define PH_PIN              39    // ADC1 — 5V column
@@ -61,6 +63,8 @@ Adafruit_SSD1306 display(OLED_WIDTH, OLED_HEIGHT, &Wire, -1);
 
 unsigned long lastPingMs = 0;
 unsigned long lastInboundMs = 0;    // watchdog: last time DO sent us anything
+bool relay1State = false;
+bool relay2State = false;
 uint32_t pingSeq = 0;
 bool timeSynced = false;
 float tdsKValue = 0.094;   // inverted board: 200/2126 ratio from tap water
@@ -86,11 +90,17 @@ void syncTime() {
   configTime(0, 0, "pool.ntp.org", "time.nist.gov");
   time_t now = time(nullptr);
   int dots = 0;
+  unsigned long ntpStart = millis();
   while (now < 8 * 3600 * 2) {
     delay(500);
     USE_SERIAL.print(".");
     if (++dots % 20 == 0) USE_SERIAL.println();
     now = time(nullptr);
+    if (millis() - ntpStart > 30000) {
+      USE_SERIAL.println("\nNTP: TIMEOUT — continuing without sync");
+      timeSynced = true;  // continue anyway, telemetry needs this
+      return;
+    }
   }
   timeSynced = true;
   struct tm timeinfo;
@@ -538,6 +548,34 @@ void webSocketEvent(WStype_t type, uint8_t* payload, size_t length) {
             // Non-blocking: result handled in loop()
           }
         }
+        else if (command && strcmp(command, "relay_1") == 0) {
+          bool state = doc["params"]["state"] | false;
+          relay1State = state;
+          digitalWrite(RELAY1_PIN, state ? LOW : HIGH);  // active LOW
+          USE_SERIAL.printf("CMD  ← relay_1: %s\n", state ? "ON" : "OFF");
+          // Send ack
+          JsonDocument ack;
+          ack["type"] = "ack";
+          ack["command"] = "relay_1";
+          ack["state"] = relay1State;
+          char buf[128];
+          serializeJson(ack, buf);
+          webSocket.sendTXT(buf);
+        }
+        else if (command && strcmp(command, "relay_2") == 0) {
+          bool state = doc["params"]["state"] | false;
+          relay2State = state;
+          digitalWrite(RELAY2_PIN, state ? LOW : HIGH);  // active LOW
+          USE_SERIAL.printf("CMD  ← relay_2: %s\n", state ? "ON" : "OFF");
+          // Send ack
+          JsonDocument ack;
+          ack["type"] = "ack";
+          ack["command"] = "relay_2";
+          ack["state"] = relay2State;
+          char buf[128];
+          serializeJson(ack, buf);
+          webSocket.sendTXT(buf);
+        }
         else if (command && strcmp(command, "calibrate") == 0) {
           const char* calType = doc["params"]["type"];
           USE_SERIAL.printf("CMD  ← calibrate: %s\n", calType);
@@ -732,6 +770,8 @@ void sendTelemetry() {
   doc["ph"]        = round(ph * 100) / 100.0;
   doc["temp"]      = round(temp * 10) / 10.0;
   doc["led"]       = led;
+  doc["relay_1"]   = relay1State;
+  doc["relay_2"]   = relay2State;
   doc["esp32_ms"]  = espMs;
 
   char buf[256];
@@ -879,6 +919,10 @@ void setup() {
 
   pinMode(LED_PIN, OUTPUT);
   setLED(false);
+  pinMode(RELAY1_PIN, OUTPUT);
+  digitalWrite(RELAY1_PIN, HIGH);  // active LOW: HIGH = OFF
+  pinMode(RELAY2_PIN, OUTPUT);
+  digitalWrite(RELAY2_PIN, HIGH);  // active LOW: HIGH = OFF
 
   EEPROM.begin(512);
   loadCalibration();
