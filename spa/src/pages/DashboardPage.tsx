@@ -202,12 +202,12 @@ export default function DashboardPage() {
   const totalDevices = devices.length
   const esp32Uptime = latestTelemetry?.ts_ms ? Math.floor(latestTelemetry.ts_ms / 1000) : null
 
-  const kpiCards = [
+  const kpiCards: Array<{ label: string; valueStr: string; valueNum: number | null; icon: any; color: string; unit: string; warning?: string | null }> = [
     { label: 'Online Devices', valueStr: `${onlineCount}/${totalDevices}`, valueNum: null, icon: Cpu, color: '#4CAF50', unit: '' },
     { label: 'pH Level', valueStr: latestTelemetry?.ph != null ? latestTelemetry.ph.toFixed(2) : '-', valueNum: latestTelemetry?.ph ?? null, icon: Droplets, color: '#2196F3', unit: '' },
     { label: 'Temperature', valueStr: latestTelemetry?.water_temp != null ? `${latestTelemetry.water_temp.toFixed(1)}°C` : '-', valueNum: latestTelemetry?.water_temp ?? null, icon: Thermometer, color: '#E91E63', unit: '°C' },
-    { label: 'TDS', valueStr: latestTelemetry?.tds != null ? `${Math.round(latestTelemetry.tds)} ppm` : (latestTelemetry?.ec != null ? `${Math.round(latestTelemetry.ec)} ppm` : '-'), valueNum: latestTelemetry?.tds ?? latestTelemetry?.ec ?? null, icon: Zap, color: '#FF9800', unit: 'ppm' },
-    { label: 'EC', valueStr: latestTelemetry?.ec != null ? `${latestTelemetry.ec.toFixed(1)} µS/cm` : '-', valueNum: latestTelemetry?.ec ?? null, icon: TrendingUp, color: '#4CAF50', unit: 'µS/cm' },
+    { label: 'TDS', valueStr: latestTelemetry?.tds != null ? `${Math.round(latestTelemetry.tds)} ppm` : (latestTelemetry?.ec != null ? `${Math.round(latestTelemetry.ec)} ppm` : '-'), valueNum: latestTelemetry?.tds ?? latestTelemetry?.ec ?? null, icon: Zap, color: '#FF9800', unit: 'ppm', warning: Number(latestTelemetry?.tds ?? latestTelemetry?.ec ?? 999) < 80 ? 'Uncalibrated — verify probe' : null },
+    { label: 'EC', valueStr: latestTelemetry?.ec != null ? `${latestTelemetry.ec.toFixed(1)} µS/cm` : '-', valueNum: latestTelemetry?.ec ?? null, icon: TrendingUp, color: '#4CAF50', unit: 'µS/cm', warning: (latestTelemetry?.ec ?? 999) < 150 ? 'Uncalibrated — verify probe' : null },
   ]
 
   const sparkData = useMemo(() => {
@@ -289,6 +289,11 @@ export default function DashboardPage() {
                     />
                   )}
                 </div>
+                {'warning' in card && card.warning && (
+                  <p className="text-[10px] text-amber-600 mt-1 flex items-center gap-1">
+                    ⚠ {card.warning}
+                  </p>
+                )}
               </div>
               <div className="flex h-10 w-10 items-center justify-center rounded-lg" style={{ backgroundColor: `${card.color}15` }}>
                 <card.icon className="h-5 w-5" style={{ color: card.color }} />
