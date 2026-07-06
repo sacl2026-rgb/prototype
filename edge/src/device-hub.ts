@@ -423,6 +423,10 @@ export class DeviceHub extends DurableObject {
 
   private handleAck(msg: Record<string, any>) {
     if (typeof msg.led === "boolean") this.ledState = msg.led;
+    if (typeof msg.state === "boolean") {
+      if (msg.command === "relay_1") this.relay1State = msg.state;
+      if (msg.command === "relay_2") this.relay2State = msg.state;
+    }
     const now = Date.now();
     const deviceId = (msg.device_id as string) || "esp32-sensor";
 
