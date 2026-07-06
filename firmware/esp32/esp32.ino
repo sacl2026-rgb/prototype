@@ -551,7 +551,7 @@ void webSocketEvent(WStype_t type, uint8_t* payload, size_t length) {
         else if (command && strcmp(command, "relay_1") == 0) {
           bool state = doc["params"]["state"] | false;
           relay1State = state;
-          digitalWrite(RELAY1_PIN, state ? LOW : HIGH);  // active LOW
+          digitalWrite(RELAY1_PIN, state ? HIGH : LOW);  // active HIGH
           USE_SERIAL.printf("CMD  ← relay_1: %s\n", state ? "ON" : "OFF");
           // Send ack
           JsonDocument ack;
@@ -565,7 +565,7 @@ void webSocketEvent(WStype_t type, uint8_t* payload, size_t length) {
         else if (command && strcmp(command, "relay_2") == 0) {
           bool state = doc["params"]["state"] | false;
           relay2State = state;
-          digitalWrite(RELAY2_PIN, state ? LOW : HIGH);  // active LOW
+          digitalWrite(RELAY2_PIN, state ? HIGH : LOW);  // active HIGH
           USE_SERIAL.printf("CMD  ← relay_2: %s\n", state ? "ON" : "OFF");
           // Send ack
           JsonDocument ack;
@@ -920,9 +920,9 @@ void setup() {
   pinMode(LED_PIN, OUTPUT);
   setLED(false);
   pinMode(RELAY1_PIN, OUTPUT);
-  digitalWrite(RELAY1_PIN, HIGH);  // active LOW: HIGH = OFF
+  digitalWrite(RELAY1_PIN, LOW);  // active HIGH: LOW = OFF
   pinMode(RELAY2_PIN, OUTPUT);
-  digitalWrite(RELAY2_PIN, HIGH);  // active LOW: HIGH = OFF
+  digitalWrite(RELAY2_PIN, LOW);  // active HIGH: LOW = OFF
 
   EEPROM.begin(512);
   loadCalibration();
