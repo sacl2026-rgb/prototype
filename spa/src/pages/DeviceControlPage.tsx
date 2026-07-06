@@ -172,6 +172,7 @@ function DeviceCard({ device: d, telemetry }: { device: any; telemetry: any[] })
       <RelayToggle
         label="Relay 1"
         state={relay1State}
+        locked={togglesLocked}
         onToggle={async (on) => { await toggleRelay1(deviceId, on) }}
       />
 
@@ -179,6 +180,7 @@ function DeviceCard({ device: d, telemetry }: { device: any; telemetry: any[] })
       <RelayToggle
         label="Relay 2"
         state={relay2State}
+        locked={togglesLocked}
         onToggle={async (on) => { await toggleRelay2(deviceId, on) }}
       />
 
