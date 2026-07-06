@@ -7,6 +7,7 @@ export function useWebSocket(deviceId: string | number | null) {
   const wsRef = useRef<WebSocket | null>(null)
   const handlersRef = useRef<Map<string, Set<MessageHandler>>>(new Map())
   const [connected, setConnected] = useState(false)
+  const [deviceOnline, setDeviceOnline] = useState(false)
   const [ledState, setLedState] = useState<boolean | null>(null)
   const [wifiNetworks, setWifiNetworks] = useState<any[]>([])
   const [wifiScanning, setWifiScanning] = useState(false)
@@ -46,6 +47,7 @@ export function useWebSocket(deviceId: string | number | null) {
         // Prototype DO sends { type: "state", ph, tds, ec, temp, led, connected, doTs, esp32_ms }
         if (msg.type === 'state') {
           if (typeof msg.led === 'boolean') setLedState(msg.led)
+          if (typeof msg.connected === 'boolean') setDeviceOnline(msg.connected)
         }
 
         // WiFi scan results — store in hook state for SettingsPage
@@ -150,5 +152,5 @@ export function useWebSocket(deviceId: string | number | null) {
     return false
   }, [])
 
-  return { connected, ledState, wifiNetworks, wifiScanning, wifiAck, on, sendRelay, sendPhCal, sendLed, toggleLed, sendCommand }
+  return { connected, deviceOnline, ledState, wifiNetworks, wifiScanning, wifiAck, on, sendRelay, sendPhCal, sendLed, toggleLed, sendCommand }
 }

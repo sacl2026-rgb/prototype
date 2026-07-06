@@ -125,7 +125,7 @@ export default function DashboardPage() {
   const { data: initialTelemetry, loading: telemetryLoading, refetch: refetchTelemetry } = useTelemetry(undefined, 200)
 
   const firstDeviceId = initialDevices[0]?.device_id || initialDevices[0]?.id || null
-  const { connected: wsConnected, on } = useWebSocket(firstDeviceId)
+  const { connected: wsConnected, deviceOnline, on } = useWebSocket(firstDeviceId)
 
   const [devices, setDevices] = useState<Device[]>([])
   const [refreshing, setRefreshing] = useState(false)
@@ -247,9 +247,9 @@ export default function DashboardPage() {
 
       {/* Status strip */}
       <div className="flex items-center gap-3 px-3 py-1.5 rounded-lg bg-gray-50 border border-gray-100 text-[10px] text-gray-500">
-        <span className={`inline-flex items-center gap-1 ${wsConnected ? 'text-green-600' : 'text-red-500'}`}>
-          <span className={`h-1.5 w-1.5 rounded-full ${wsConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
-          {wsConnected ? 'Live' : 'Polling'}
+        <span className={`inline-flex items-center gap-1 ${deviceOnline ? 'text-green-600' : 'text-red-500'}`}>
+          <span className={`h-1.5 w-1.5 rounded-full ${deviceOnline ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
+          {deviceOnline ? 'Live' : 'Offline'}
         </span>
         <span className="text-gray-300">·</span>
         <span>{firstDeviceId || '—'}</span>
