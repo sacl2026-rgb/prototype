@@ -71,7 +71,7 @@ export default function DeviceControlPage() {
 
 function DeviceCard({ device: d, telemetry }: { device: any; telemetry: any[] }) {
   const deviceId = d.device_id || d.id
-  const { connected: wsConnected, ledState, relay1State, relay2State, toggleLed, toggleRelay1, toggleRelay2 } = useWebSocket(deviceId)
+  const { connected: wsConnected, ledState, relay1State, relay2State, togglesLocked, toggleLed, toggleRelay1, toggleRelay2 } = useWebSocket(deviceId)
   const latestT = telemetry.find((t: any) => t.device_id === deviceId)
 
   // LED state precedence: WS live > telemetry polling > off
@@ -151,8 +151,8 @@ function DeviceCard({ device: d, telemetry }: { device: any; telemetry: any[] })
         <div className="flex items-center gap-2">
           <button
             onClick={handleToggle}
-            disabled={toggling}
-            className={`flex items-center gap-1.5 text-xs transition-opacity ${toggling ? 'opacity-50' : ''}`}
+            disabled={toggling || togglesLocked}
+            className={`flex items-center gap-1.5 text-xs transition-opacity ${(toggling || togglesLocked) ? 'opacity-50' : ''}`}
           >
             {ledOn
               ? <ToggleRight className="h-5 w-5 text-[#00a65a]" />
@@ -190,7 +190,7 @@ function DeviceCard({ device: d, telemetry }: { device: any; telemetry: any[] })
   )
 }
 
-function RelayToggle({ label, state, onToggle }: { label: string; state: boolean | null; onToggle: (on: boolean) => Promise<void> }) {
+function RelayToggle({ label, state, locked, onToggle }: { label: string; state: boolean | null; locked?: boolean; onToggle: (on: boolean) => Promise<void> }) {
   const [toggling, setToggling] = useState(false)
   const isOn = state === true
 
@@ -204,8 +204,8 @@ function RelayToggle({ label, state, onToggle }: { label: string; state: boolean
     <div className="flex items-center justify-between py-1.5 border-t border-border/30">
       <button
         onClick={handleToggle}
-        disabled={toggling}
-        className={`flex items-center gap-1.5 text-xs transition-opacity ${toggling ? 'opacity-50' : ''}`}
+        disabled={toggling || !!locked}
+        className={`flex items-center gap-1.5 text-xs transition-opacity ${(toggling || locked) ? 'opacity-50' : ''}`}
       >
         {isOn
           ? <ToggleRight className="h-5 w-5 text-[#00a65a]" />

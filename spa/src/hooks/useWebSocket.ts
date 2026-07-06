@@ -11,6 +11,8 @@ export function useWebSocket(deviceId: string | number | null) {
   const [ledState, setLedState] = useState<boolean | null>(null)
   const [relay1State, setRelay1State] = useState<boolean | null>(null)
   const [relay2State, setRelay2State] = useState<boolean | null>(null)
+  const [togglesLocked, setTogglesLocked] = useState(false)
+  const lockTimerRef = useRef<number>(0)
   const [wifiNetworks, setWifiNetworks] = useState<any[]>([])
   const [wifiScanning, setWifiScanning] = useState(false)
   const [wifiAck, setWifiAck] = useState<{ success: boolean; message: string } | null>(null)
@@ -110,6 +112,12 @@ export function useWebSocket(deviceId: string | number | null) {
     }
   }, [])
 
+  const lock = useCallback(() => {
+    setTogglesLocked(true)
+    clearTimeout(lockTimerRef.current)
+    lockTimerRef.current = window.setTimeout(() => setTogglesLocked(false), 3000)
+  }, [])
+
   const toggleLed = useCallback(async (devId: string, on: boolean): Promise<boolean> => {
     const relay1 = on ? 1 : 0
     const apiBase = 'https://iot-hub.funconnect.workers.dev'
@@ -130,12 +138,13 @@ export function useWebSocket(deviceId: string | number | null) {
       }
     } catch { /* fall through to WS */ }
 
+    lock()
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify({ command: 'set_led', state: on, device_id: devId }))
     }
 
     return on
-  }, [])
+  }, [lock])
 
   const sendRelay = useCallback((deviceId: string, relay1: number, _relay2?: number, _relay3?: number, _relay4?: number) => {
     toggleLed(deviceId, relay1 === 1)
@@ -157,20 +166,22 @@ export function useWebSocket(deviceId: string | number | null) {
   }, [])
 
   const toggleRelay1 = useCallback(async (devId: string, on: boolean): Promise<boolean> => {
+    lock()
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify({ command: 'relay_1', params: { state: on }, device_id: devId }))
       setRelay1State(on)
     }
     return on
-  }, [])
+  }, [lock])
 
   const toggleRelay2 = useCallback(async (devId: string, on: boolean): Promise<boolean> => {
+    lock()
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify({ command: 'relay_2', params: { state: on }, device_id: devId }))
       setRelay2State(on)
     }
     return on
-  }, [])
+  }, [lock])
 
-  return { connected, deviceOnline, ledState, relay1State, relay2State, wifiNetworks, wifiScanning, wifiAck, on, sendRelay, sendPhCal, sendLed, toggleLed, toggleRelay1, toggleRelay2, sendCommand }
+  return { connected, deviceOnline, ledState, relay1State, relay2State, togglesLocked, wifiNetworks, wifiScanning, wifiAck, on, sendRelay, sendPhCal, sendLed, toggleLed, toggleRelay1, toggleRelay2, sendCommand }
 }
