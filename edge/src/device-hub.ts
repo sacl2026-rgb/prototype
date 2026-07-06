@@ -40,6 +40,8 @@ export class DeviceHub extends DurableObject {
   private dashboards = new Map<WebSocket, Attachment>();
 
   private ledState = false;
+  private relay1State = false;
+  private relay2State = false;
   private lastTelemetryMs = 0; // for bidirectional health check
   private tds = 0;
   private ec = 0;
@@ -170,6 +172,24 @@ export class DeviceHub extends DurableObject {
       }
     }
 
+    // --- Live device status (called by Worker /api/devices) ---
+    if (url.pathname === "/do-devices" && request.method === "GET") {
+      const online = this.esp32ws !== null;
+      return new Response(
+        JSON.stringify({
+          devices: [{
+            id: 1,
+            device_id: "esp32-sensor",
+            name: "Test Sensor",
+            type: "esp32",
+            last_seen: Date.now(),
+            status: online ? "online" : "offline",
+          }],
+        }),
+        { headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } },
+      );
+    }
+
     // --- Internal DO query endpoints (called by GreenyAgent DO) ---
     if (url.pathname === "/do-telemetry" && request.method === "GET") {
       try {
@@ -277,7 +297,8 @@ export class DeviceHub extends DurableObject {
       console.log(`[DO] Dashboard connected (${this.dashboards.size} total)`);
       server.send(JSON.stringify({
         type: "state", device_id: deviceId,
-        led: this.ledState, connected: this.esp32ws !== null,
+        led: this.ledState, relay1: this.relay1State, relay2: this.relay2State,
+        connected: this.esp32ws !== null,
         tds: this.tds, ec: this.ec, ph: this.ph, temp: this.temp,
         doTs: Date.now(),
       }));
@@ -335,6 +356,8 @@ export class DeviceHub extends DurableObject {
     this.ph = msg.ph as number;
     this.temp = msg.temp as number;
     if (typeof msg.led === "boolean") this.ledState = msg.led;
+    if (typeof msg.relay_1 === "boolean") this.relay1State = msg.relay_1;
+    if (typeof msg.relay_2 === "boolean") this.relay2State = msg.relay_2;
 
     this.ctx.storage.sql.exec(
       `INSERT INTO telemetry_buffer
@@ -377,6 +400,7 @@ export class DeviceHub extends DurableObject {
     // Our native broadcast
     this.broadcast({
       type: "state", device_id: deviceId, led: this.ledState,
+      relay1: this.relay1State, relay2: this.relay2State,
       connected: true,
       tds: this.tds, ec: this.ec, ph: this.ph, temp: this.temp,
       esp32_ms: msg.esp32_ms ?? 0,
@@ -423,6 +447,7 @@ export class DeviceHub extends DurableObject {
 
     this.broadcast({
       type: "state", device_id: deviceId, led: this.ledState,
+      relay1: this.relay1State, relay2: this.relay2State,
       connected: true, tds: this.tds, ec: this.ec, ph: this.ph, temp: this.temp,
       doTs: now,
     });

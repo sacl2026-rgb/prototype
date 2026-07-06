@@ -629,6 +629,12 @@ async function handleGetTelemetry(
 }
 
 async function handleGetDevices(env: Env): Promise<Response> {
+  // Route through DO to get live connection status, not stale D1
+  const doId = env.DEVICE_HUB.idFromName("esp32-sensor");
+  const stub = env.DEVICE_HUB.get(doId);
+  const doResp = await stub.fetch(new Request("https://do/do-devices"));
+  if (doResp.ok) return doResp;
+  // Fallback to D1
   const rows = await env.DB.prepare(
     "SELECT * FROM devices ORDER BY id ASC"
   ).all();
