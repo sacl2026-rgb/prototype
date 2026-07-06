@@ -71,7 +71,7 @@ export default function DeviceControlPage() {
 
 function DeviceCard({ device: d, telemetry }: { device: any; telemetry: any[] }) {
   const deviceId = d.device_id || d.id
-  const { connected: wsConnected, ledState, toggleLed } = useWebSocket(deviceId)
+  const { connected: wsConnected, ledState, relay1State, relay2State, toggleLed, toggleRelay1, toggleRelay2 } = useWebSocket(deviceId)
   const latestT = telemetry.find((t: any) => t.device_id === deviceId)
 
   // LED state precedence: WS live > telemetry polling > off
@@ -168,10 +168,52 @@ function DeviceCard({ device: d, telemetry }: { device: any; telemetry: any[] })
         </span>
       </div>
 
+      {/* Relay 1 Toggle */}
+      <RelayToggle
+        label="Relay 1"
+        state={relay1State}
+        onToggle={async (on) => { await toggleRelay1(deviceId, on) }}
+      />
+
+      {/* Relay 2 Toggle */}
+      <RelayToggle
+        label="Relay 2"
+        state={relay2State}
+        onToggle={async (on) => { await toggleRelay2(deviceId, on) }}
+      />
+
       {/* Footer */}
       <div className="flex items-center justify-between pt-2 text-[10px] text-gray-400">
         <span>{d.last_seen ? timeAgo(d.last_seen) : 'Never'}</span>
       </div>
+    </div>
+  )
+}
+
+function RelayToggle({ label, state, onToggle }: { label: string; state: boolean | null; onToggle: (on: boolean) => Promise<void> }) {
+  const [toggling, setToggling] = useState(false)
+  const isOn = state === true
+
+  const handleToggle = async () => {
+    setToggling(true)
+    await onToggle(!isOn)
+    setToggling(false)
+  }
+
+  return (
+    <div className="flex items-center justify-between py-1.5 border-t border-border/30">
+      <button
+        onClick={handleToggle}
+        disabled={toggling}
+        className={`flex items-center gap-1.5 text-xs transition-opacity ${toggling ? 'opacity-50' : ''}`}
+      >
+        {isOn
+          ? <ToggleRight className="h-5 w-5 text-[#00a65a]" />
+          : <ToggleLeft className="h-5 w-5 text-gray-400" />
+        }
+        <span className={isOn ? 'text-[#00a65a] font-medium' : 'text-gray-500'}>{label}</span>
+      </button>
+      <span className={`h-1.5 w-1.5 rounded-full ${isOn ? 'bg-[#00a65a] animate-pulse' : 'bg-gray-300'}`} />
     </div>
   )
 }

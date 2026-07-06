@@ -9,6 +9,8 @@ export function useWebSocket(deviceId: string | number | null) {
   const [connected, setConnected] = useState(false)
   const [deviceOnline, setDeviceOnline] = useState(false)
   const [ledState, setLedState] = useState<boolean | null>(null)
+  const [relay1State, setRelay1State] = useState<boolean | null>(null)
+  const [relay2State, setRelay2State] = useState<boolean | null>(null)
   const [wifiNetworks, setWifiNetworks] = useState<any[]>([])
   const [wifiScanning, setWifiScanning] = useState(false)
   const [wifiAck, setWifiAck] = useState<{ success: boolean; message: string } | null>(null)
@@ -47,6 +49,8 @@ export function useWebSocket(deviceId: string | number | null) {
         // Prototype DO sends { type: "state", ph, tds, ec, temp, led, connected, doTs, esp32_ms }
         if (msg.type === 'state') {
           if (typeof msg.led === 'boolean') setLedState(msg.led)
+          if (typeof msg.relay1 === 'boolean') setRelay1State(msg.relay1)
+          if (typeof msg.relay2 === 'boolean') setRelay2State(msg.relay2)
           if (typeof msg.connected === 'boolean') setDeviceOnline(msg.connected)
         }
 
@@ -152,5 +156,21 @@ export function useWebSocket(deviceId: string | number | null) {
     return false
   }, [])
 
-  return { connected, deviceOnline, ledState, wifiNetworks, wifiScanning, wifiAck, on, sendRelay, sendPhCal, sendLed, toggleLed, sendCommand }
+  const toggleRelay1 = useCallback(async (devId: string, on: boolean): Promise<boolean> => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({ command: 'relay_1', params: { state: on }, device_id: devId }))
+      setRelay1State(on)
+    }
+    return on
+  }, [])
+
+  const toggleRelay2 = useCallback(async (devId: string, on: boolean): Promise<boolean> => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({ command: 'relay_2', params: { state: on }, device_id: devId }))
+      setRelay2State(on)
+    }
+    return on
+  }, [])
+
+  return { connected, deviceOnline, ledState, relay1State, relay2State, wifiNetworks, wifiScanning, wifiAck, on, sendRelay, sendPhCal, sendLed, toggleLed, toggleRelay1, toggleRelay2, sendCommand }
 }
