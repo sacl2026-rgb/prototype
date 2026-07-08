@@ -44,6 +44,9 @@ export function DashboardLayout() {
             <div className="lg:pl-60">
               <Header />
               <main className="p-4 lg:p-6">
+                <div className="mb-4 rounded-lg bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-400/30 px-4 py-2 text-center text-xs text-amber-700">
+                  ⚠ <strong>Alpha Version</strong> — More features coming soon. Sensor readings may need calibration.
+                </div>
                 <Outlet />
               </main>
             </div>
