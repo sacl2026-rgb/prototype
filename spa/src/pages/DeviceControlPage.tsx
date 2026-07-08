@@ -28,6 +28,8 @@ export default function DeviceControlPage() {
 
   if (loading) return <div className="text-gray-400">Loading...</div>
 
+  if (loading) return <div className="text-gray-400">Loading...</div>
+
   const filtered = devices.filter(d =>
     !search || d.name.toLowerCase().includes(search.toLowerCase()) || (d.device_id || d.id).toLowerCase().includes(search.toLowerCase())
   )
@@ -71,7 +73,7 @@ export default function DeviceControlPage() {
 
 function DeviceCard({ device: d, telemetry }: { device: any; telemetry: any[] }) {
   const deviceId = d.device_id || d.id
-  const { connected: wsConnected, ledState, relay1State, relay2State, togglesLocked, toggleLed, toggleRelay1, toggleRelay2 } = useWebSocket(deviceId)
+  const { connected: wsConnected, deviceOnline, ledState, relay1State, relay2State, togglesLocked, toggleLed, toggleRelay1, toggleRelay2 } = useWebSocket(deviceId)
   const latestT = telemetry.find((t: any) => t.device_id === deviceId)
 
   // LED state precedence: WS live > telemetry polling > off
@@ -87,25 +89,26 @@ function DeviceCard({ device: d, telemetry }: { device: any; telemetry: any[] })
     setToggling(false)
   }
 
-  const statusLabel = d.status === 'online' ? 'Online' : d.status === 'offline' ? 'Offline' :
-    d.status === 'warning' ? 'Warning' : d.status === 'alarm' ? 'Alarm' :
-    d.status === 'maintenance' ? 'Maintenance' : d.status
+  const liveStatus = deviceOnline ? 'online' : d.status
+  const statusLabel = liveStatus === 'online' ? 'Online' : liveStatus === 'offline' ? 'Offline' :
+    liveStatus === 'warning' ? 'Warning' : liveStatus === 'alarm' ? 'Alarm' :
+    liveStatus === 'maintenance' ? 'Maintenance' : liveStatus
 
   return (
-    <div className={`rounded-xl border p-5 shadow-sm transition-all hover:shadow-md ${statusBgColors[d.status] || 'border-border bg-white'}`}>
+    <div className={`rounded-xl border p-5 shadow-sm transition-all hover:shadow-md ${statusBgColors[liveStatus] || 'border-border bg-white'}`}>
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <span className={`h-2.5 w-2.5 rounded-full ${statusDotColors[d.status] || 'bg-gray-400'}`} />
+          <span className={`h-2.5 w-2.5 rounded-full ${statusDotColors[liveStatus] || 'bg-gray-400'}`} />
           <div>
             <p className="font-semibold text-gray-900">{d.name}</p>
             <p className="text-xs text-gray-400">{d.device_id || d.id}</p>
           </div>
         </div>
         <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-          d.status === 'online' ? 'bg-green-100 text-green-700' :
-          d.status === 'warning' || d.status === 'alarm' ? 'bg-amber-100 text-amber-700' :
-          d.status === 'maintenance' ? 'bg-blue-100 text-blue-700' :
+          liveStatus === 'online' ? 'bg-green-100 text-green-700' :
+          liveStatus === 'warning' || liveStatus === 'alarm' ? 'bg-amber-100 text-amber-700' :
+          liveStatus === 'maintenance' ? 'bg-blue-100 text-blue-700' :
           'bg-gray-100 text-gray-700'
         }`}>
           {statusLabel}
